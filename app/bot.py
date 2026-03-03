@@ -19,6 +19,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+    print("Loaded extensions:", list(bot.extensions.keys()))
 
 async def load_extensions():
     for file in COGS_DIR.rglob("*.py"):

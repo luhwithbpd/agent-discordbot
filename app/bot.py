@@ -4,8 +4,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
-COGS_DIR = BASE_DIR / "cogs"
+BASE_DIR = Path(__file__).resolve().parent.parent
+COGS_DIR = BASE_DIR / "app" / "cogs"
 
 load_dotenv()
 
@@ -23,7 +23,8 @@ async def on_ready():
 async def load_extensions():
     for file in COGS_DIR.rglob("*.py"):
         if file.name != "__init__.py":
-            module = ".".join(file.with_suffix("").relative_to(BASE_DIR).parts)
+            module_path = file.with_suffix("").relative_to(BASE_DIR)
+            module = ".".join(module_path.parts)
             await bot.load_extension(module)
 
 async def main():

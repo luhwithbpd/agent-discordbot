@@ -6,12 +6,15 @@ class AI(commands.Cog):
         self.bot = bot
         self.chat_service = ChatService()
 
-    @commands.command()
+    @commands.command(name="chat")
     async def chat(self, ctx, *, message: str):
+        await ctx.typing()
+
         response = await self.chat_service.generate_response(
             user_id=ctx.author.id,
             message=message
         )
+        
         await ctx.send(response)
 
 async def setup(bot):

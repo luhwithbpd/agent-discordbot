@@ -11,56 +11,63 @@ class AI(commands.Cog):
         self.bot = bot
         self.chat_service = ChatService()
 
-        # anti-spam básico
         self._last_auto_reply = 0.0
-        self._cooldown_seconds = 45  # tempo mínimo entre respostas "por vontade"
+        self._cooldown_seconds = 45
 
     def _should_reply_to_mention(self, content: str) -> bool:
         c = content.lower()
-        return "totoro" in c  # simples: contém a palavra mori
+        return ("totoro" in c) or ("mori" in c)
 
     def _can_auto_reply_now(self) -> bool:
         return (time.time() - self._last_auto_reply) >= self._cooldown_seconds
 
     def _should_auto_reply(self, message) -> bool:
-        # regras para evitar ficar chato
-        if message.guild is None:  # ignora DM por enquanto (opcional)
+        if message.guild is None:
             return False
         if message.author.bot:
             return False
         if not self._can_auto_reply_now():
             return False
-
-        # chance baixa de “vontade própria”
-        # ajuste entre 0.01 e 0.05 (1% a 5%)
         return random.random() < 0.02
 
-@commands.Cog.listener()
-async def on_message(self, message):
-    print(f"[on_message] got message in #{getattr(message.channel, 'id', None)} "
-          f"from {message.author} ({message.author.id}): {message.content!r}")
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return
 
-    if message.author.bot:
-        return
+        # Só no canal do Mori/Totoro
+        if message.channel.id != MORI_CHANNEL_ID:
+            await self.bot.process_commands(message)
+            return
 
-    print(f"[on_message] channel.id={message.channel.id} expected={MORI_CHANNEL_ID}")
+        content = message.content.strip()
 
-    content = message.content.strip()
+        # 1) Responde quando for citado pelo nome (ou marcado)
+        mentioned_bot = self.bot.user in message.mentions if self.bot.user else False
+        called = self._should_reply_to_mention(content) or mentioned_bot
 
-    called = self._should_reply_to_name(content) or (self.bot.user in message.mentions)
-    if not called:
-        return
+        if called:
+            async with message.channel.typing():
+                reply = await self.chat_service.generate_response(
+                    channel_id=message.channel.id,
+                    user_id=message.author.id,
+                    message=message.content
+                )
+            await message.reply(reply, mention_author=False)
 
-    try:
-        async with message.channel.typing():
-            reply = await self.chat_service.generate_response(
-                user_id=message.author.id,
-                message=content
-            )
-        await message.reply(reply, mention_author=False)
-    except Exception as e:
-        print(f"[AI Cog] Error: {repr(e)}")
-        await message.channel.send("Hm... tropecei numa raiz. Tenta de novo?")
+        # 2) Resposta “por vontade própria” (opcional)
+        elif self._should_auto_reply(message):
+            self._last_auto_reply = time.time()
+            async with message.channel.typing():
+                reply = await self.chat_service.generate_response(
+                    channel_id=message.channel.id,
+                    user_id=message.author.id,
+                    message=message.content
+                )
+            await message.channel.send(reply)
+
+        # Mantém comandos funcionando
+        await self.bot.process_commands(message)
 
 async def setup(bot):
     await bot.add_cog(AI(bot))

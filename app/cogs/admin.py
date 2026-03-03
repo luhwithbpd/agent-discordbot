@@ -8,7 +8,7 @@ class Admin(commands.Cog):
     @commands.is_owner()
     async def reload(self, ctx, extension: str):
         try:
-            await self.bot.reload_extension(f"cogs.{extension}")
+            await self.bot.reload_extension(f"app.cogs.{extension}")
             await ctx.send(f"Cog `{extension}` recarregado com sucesso.")
         except Exception as e:
             await ctx.send(f"Erro ao recarregar: {e}")

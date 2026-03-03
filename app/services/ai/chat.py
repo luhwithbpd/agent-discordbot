@@ -1,26 +1,21 @@
-from openai import AsyncOpenAI
+from huggingface_hub import InferenceClient
 import os
 
 class ChatService:
     def __init__(self):
-        self.client = AsyncOpenAI(
-            api_key=os.getenv("OPENAI_API_KEY")
-            )
-        pass
+        self.client = InferenceClient(token=os.getenv("HF_API_KEY"))
 
-    async def generate_response(self, user_id: int, message: str) -> str:
-        try:
-            response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": message}
-                ],
-                temperature=0.7,
-            )
-
-            return response.choices[0].message.content
+    async def generate_response(self, user_id, message):
+        result = self.client.chat.completions.create(
+            model="Qwen/Qwen2.5-7B-Instruct",
+            messages=[
+                {"role":"system","content":"Você é um assistente útil."},
+                {"role":"user","content": message}
+            ],
+            max_tokens=200
+        )
+        return result.choices[0].message.content
         
-        except Exception as e:
-            print(f"Error generating response: {e}")
-            return "Desculpe, ocorreu um erro ao processar sua mensagem."
+        # except Exception as e:
+        #     print(f"Error generating response: {e}")
+        #     return "Desculpe, ocorreu um erro ao processar sua mensagem."

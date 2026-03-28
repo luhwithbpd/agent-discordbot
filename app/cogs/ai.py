@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from app.services.ai.chat import ChatService
 
-MORI_CHANNEL_ID = 1478396294593777707
+MORI_CHANNEL_ID = 1414575528110854256
 
 class AI(commands.Cog):
     def __init__(self, bot: commands.Bot):
